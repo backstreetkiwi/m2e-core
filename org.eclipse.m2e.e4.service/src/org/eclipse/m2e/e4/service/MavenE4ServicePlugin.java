@@ -50,6 +50,18 @@ public class MavenE4ServicePlugin extends Plugin {
     this.getLog().log(new Status(status, PLUGIN_ID, message));
   }
 
+  /**
+   * Logs given message with given status and throwable.
+   * 
+   * @param status status of message
+   * @param message text of message
+   * @param throwable Throwable
+   * @see IStatus
+   */
+  public void log(int status, String message, Throwable throwable) {
+    this.getLog().log(new Status(status, PLUGIN_ID, message, throwable));
+  }
+
   public static MavenE4ServicePlugin getDefault() {
     return instance;
   }
