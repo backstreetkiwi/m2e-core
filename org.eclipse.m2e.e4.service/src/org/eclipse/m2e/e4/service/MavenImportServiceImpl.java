@@ -68,15 +68,22 @@ public class MavenImportServiceImpl implements MavenImportService {
     job.schedule();
   }
 
+  /**
+   * Removes Eclipse-Files from given Project Folder.
+   * 
+   * @param projectFolder Project Folder
+   */
   private void removeEclipseFiles(File projectFolder) {
     new File(projectFolder, ".project").delete();
     new File(projectFolder, ".classpath").delete();
     File settingsDirectory = new File(projectFolder, ".settings");
-    File[] settingsFiles = settingsDirectory.listFiles();
-    for(int i = 0; i < settingsFiles.length; i++ ) {
-      settingsFiles[i].delete();
+    if(settingsDirectory.isDirectory()) {
+      File[] settingsFiles = settingsDirectory.listFiles();
+      for(int i = 0; i < settingsFiles.length; i++ ) {
+        settingsFiles[i].delete();
+      }
+      settingsDirectory.delete();
     }
-    settingsDirectory.delete();
   }
 
   /**
