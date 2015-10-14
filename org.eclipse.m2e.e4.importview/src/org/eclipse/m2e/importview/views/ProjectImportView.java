@@ -13,17 +13,23 @@
 package org.eclipse.m2e.importview.views;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.jface.viewers.CheckboxTreeViewer;
+import org.eclipse.jface.viewers.ITreeSelection;
+import org.eclipse.jface.viewers.ListViewer;
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.embedder.MavenModelManager;
 import org.eclipse.m2e.core.project.LocalProjectScanner;
 import org.eclipse.m2e.core.project.MavenProjectInfo;
+import org.eclipse.m2e.core.project.ProjectImportConfiguration;
+import org.eclipse.m2e.core.ui.internal.wizards.ImportMavenProjectsJob;
 import org.eclipse.m2e.e4.importview.MavenE4ImportViewPlugin;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -39,6 +45,7 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
+import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.part.ViewPart;
 
 /**
@@ -48,55 +55,68 @@ import org.eclipse.ui.part.ViewPart;
  */
 public class ProjectImportView extends ViewPart {
 
+   // TODO: remove eclipse files checkbox
+
    public static final String ID = "org.eclipse.m2e.importview.views.ProjectImportView";
 
    private String rootDirectory;
+   // TODO: use Set?
+   private List<MavenProjectInfo> projectsToImport = new ArrayList<>();
 
    // UI Elements
    private Combo rootDirectoryCombo;
-   private CheckboxTreeViewer projectTreeViewer;
+   private TreeViewer projectTreeViewer;
    private Text filterText;
+   private ListViewer projectImportListViewer;
 
    @Override
    public void createPartControl(final Composite parent) {
 
-      Composite composite = new Composite(parent, SWT.NONE);
-      composite.setLayout(new GridLayout(3, false));
+      parent.setLayout(new GridLayout(3, true));
 
-      final Label selectRootDirectoryLabel = new Label(composite, SWT.NONE);
+      Composite left = new Composite(parent, SWT.NONE);
+      left.setLayout(new GridLayout(3, false));
+
+      Composite center = new Composite(parent, SWT.NONE);
+      center.setLayout(new GridLayout(3, false));
+
+      Composite right = new Composite(parent, SWT.NONE);
+      right.setLayout(new GridLayout(3, false));
+
+      final Label selectRootDirectoryLabel = new Label(left, SWT.NONE);
       selectRootDirectoryLabel.setLayoutData(new GridData());
       // FIXME: externalize Strings
       // selectRootDirectoryLabel.setText(Messages.wizardImportPageRoot);
-      selectRootDirectoryLabel.setText("Root Directory");
+      selectRootDirectoryLabel.setText("Root Directory:");
 
       // TODO: Fill with previously used Repos
-      rootDirectoryCombo = new Combo(composite, SWT.READ_ONLY);
+      rootDirectoryCombo = new Combo(left, SWT.READ_ONLY);
       rootDirectoryCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
       rootDirectoryCombo.addSelectionListener(new RootDirectoryComboSelectionHandler());
 
-      final Button browseButton = new Button(composite, SWT.NONE);
+      final Button browseButton = new Button(left, SWT.NONE);
       // FIXME: externalize Strings
       // browseButton.setText(Messages.wizardImportPageBrowse);
       browseButton.setText("Browse...");
       browseButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
       browseButton.addSelectionListener(new BrowseForDirectoryHandler(parent));
 
-      final Label filterLabel = new Label(composite, SWT.NONE);
+      final Label filterLabel = new Label(left, SWT.NONE);
       filterLabel.setLayoutData(new GridData());
       // FIXME: externalize Strings
-      filterLabel.setText("Filter");
+      filterLabel.setText("Filter:");
 
-      filterText = new Text(composite, SWT.BORDER);
+      filterText = new Text(left, SWT.BORDER);
       filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
       filterText.addModifyListener(new FilterChangedHandler());
 
-      final Label projectsLabel = new Label(composite, SWT.NONE);
+      final Label projectsLabel = new Label(left, SWT.NONE);
       projectsLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
       // FIXME: externalize Strings
       // projectsLabel.setText(Messages.wizardImportPageProjects);
-      projectsLabel.setText("Projektekram");
+      projectsLabel.setText("Projects:");
 
-      projectTreeViewer = new CheckboxTreeViewer(composite, SWT.BORDER);
+      projectTreeViewer = new TreeViewer(left, SWT.BORDER | SWT.MULTI);
       projectTreeViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
       projectTreeViewer.setLabelProvider(new ProjectSelectionLabelProvider());
 
@@ -105,6 +125,39 @@ public class ProjectImportView extends ViewPart {
       projectTreeData.heightHint = 250;
       projectTreeData.widthHint = 500;
       projectTree.setLayoutData(projectTreeData);
+
+      // TODO split method here?
+
+      final Label projectImportLabel = new Label(right, SWT.NONE);
+      projectImportLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
+      // FIXME: externalize Strings
+      projectImportLabel.setText("Projects to be imported:");
+
+      projectImportListViewer = new ListViewer(right, SWT.BORDER | SWT.MULTI);
+      projectImportListViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
+      projectImportListViewer.setLabelProvider(new ProjectSelectionLabelProvider());
+      projectImportListViewer.setInput(this.projectsToImport);
+
+      final org.eclipse.swt.widgets.List projectList = projectImportListViewer.getList();
+      GridData projectListData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 5);
+      projectListData.heightHint = 250;
+      projectListData.widthHint = 500;
+      projectList.setLayoutData(projectListData);
+
+      final Button addAllButton = new Button(center, SWT.NONE);
+      // FIXME: externalize Strings
+      // browseButton.setText(Messages.wizardImportPageBrowse);
+      addAllButton.setText(">");
+      addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      addAllButton.addSelectionListener(new AddAllProjectsToImportListHandler());
+
+      final Button importButton = new Button(center, SWT.NONE);
+      // FIXME: externalize Strings
+      // browseButton.setText(Messages.wizardImportPageBrowse);
+      importButton.setText("IMPORT");
+      importButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      importButton.addSelectionListener(new ImportProjectsHandler());
+
    }
 
    @Override
@@ -149,6 +202,17 @@ public class ProjectImportView extends ViewPart {
       projectTreeViewer.setInput(projectList);
       projectTreeViewer.expandAll();
       return true;
+   }
+
+   /**
+    * Adds given {@link MavenProjectInfo} to the list to import.
+    * 
+    * @param projectInfo Maven project to add
+    */
+   private void addProjectToImportList(MavenProjectInfo projectInfo) {
+      if (!projectsToImport.contains(projectInfo)) {
+         projectsToImport.add(projectInfo);
+      }
    }
 
    /**
@@ -226,10 +290,45 @@ public class ProjectImportView extends ViewPart {
          final String newText = filterText.getText();
          if (newText.trim().length() == 0) {
             projectTreeViewer.resetFilters();
+            projectTreeViewer.expandAll();
             return;
          }
          projectTreeViewer.setFilters(new ViewerFilter[] { new MavenProjectInfoFilter(newText) });
          projectTreeViewer.expandAll();
+      }
+   }
+
+   /**
+    * Handles Event "Add all projects to import list"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class AddAllProjectsToImportListHandler extends SelectionAdapter {
+      @SuppressWarnings("unchecked")
+      public void widgetSelected(SelectionEvent e) {
+         ITreeSelection selection = projectTreeViewer.getStructuredSelection();
+         Iterator<MavenProjectInfo> iterator = selection.iterator();
+         while (iterator.hasNext()) {
+            MavenProjectInfo projectInfo = iterator.next();
+            addProjectToImportList(projectInfo);
+         }
+         projectImportListViewer.refresh();
+         // projectImportListViewer.setInput(projectsToImport);
+      }
+   }
+
+   /**
+    * Handles Event "Import all projects of import list"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class ImportProjectsHandler extends SelectionAdapter {
+      @SuppressWarnings("restriction")
+      public void widgetSelected(SelectionEvent e) {
+         // FIXME: Check for already imported projects
+         ImportMavenProjectsJob job = new ImportMavenProjectsJob(projectsToImport, new ArrayList<IWorkingSet>(), new ProjectImportConfiguration());
+         job.setRule(MavenPlugin.getProjectConfigurationManager().getRule());
+         job.schedule();
       }
    }
 
