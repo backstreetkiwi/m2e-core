@@ -7,7 +7,6 @@
  *
  * Contributors:
  *      Sonatype, Inc. - initial API and implementation
- *      Fred Bricon (Red Hat, Inc.) - auto update project configuration
  *******************************************************************************/
 
 package org.eclipse.m2e.importview.views;

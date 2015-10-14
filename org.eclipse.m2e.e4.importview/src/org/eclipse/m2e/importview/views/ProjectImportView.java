@@ -7,7 +7,6 @@
  *
  * Contributors:
  *      Sonatype, Inc. - initial API and implementation
- *      Fred Bricon (Red Hat, Inc.) - auto update project configuration
  *******************************************************************************/
 
 package org.eclipse.m2e.importview.views;
@@ -117,6 +116,7 @@ public class ProjectImportView extends ViewPart {
       projectTreeViewer = new TreeViewer(left, SWT.BORDER | SWT.MULTI);
       projectTreeViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
       projectTreeViewer.setLabelProvider(new ProjectSelectionLabelProvider());
+      projectTreeViewer.setComparator(new ProjectSelectionViewerComparator());
 
       final Tree projectTree = projectTreeViewer.getTree();
       GridData projectTreeData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
@@ -132,6 +132,7 @@ public class ProjectImportView extends ViewPart {
       projectImportLabel.setText(Messages.labelProjectImportList);
 
       projectImportListViewer = new ListViewer(right, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
+      // TODO: Prüfen, ob der Content Provider nicht ggf. zu speziell ist???
       projectImportListViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
       projectImportListViewer.setLabelProvider(new ProjectSelectionLabelProvider());
       projectImportListViewer.setInput(this.projectsToImport);
@@ -282,6 +283,7 @@ public class ProjectImportView extends ViewPart {
             projectTreeViewer.expandAll();
             return;
          }
+         // FIXME: should not be case sensitive!
          projectTreeViewer.setFilters(new ViewerFilter[] { new MavenProjectInfoFilter(newText) });
          projectTreeViewer.expandAll();
       }
@@ -313,7 +315,6 @@ public class ProjectImportView extends ViewPart {
     * @author Nikolaus Winter, comdirect bank AG
     */
    private final class ImportProjectsHandler extends SelectionAdapter {
-      @SuppressWarnings("restriction")
       public void widgetSelected(SelectionEvent e) {
          // FIXME: Check for already imported projects
          ImportMavenProjectsJob job = new ImportMavenProjectsJob(new ArrayList<>(projectsToImport), new ArrayList<IWorkingSet>(),
