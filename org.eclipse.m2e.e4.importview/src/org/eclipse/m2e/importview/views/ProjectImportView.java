@@ -31,6 +31,7 @@ import org.eclipse.m2e.core.project.MavenProjectInfo;
 import org.eclipse.m2e.core.project.ProjectImportConfiguration;
 import org.eclipse.m2e.core.ui.internal.wizards.ImportMavenProjectsJob;
 import org.eclipse.m2e.e4.importview.MavenE4ImportViewPlugin;
+import org.eclipse.m2e.e4.importview.Messages;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -53,6 +54,7 @@ import org.eclipse.ui.part.ViewPart;
  * 
  * @author Nikolaus Winter, comdirect bank AG
  */
+@SuppressWarnings("restriction")
 public class ProjectImportView extends ViewPart {
 
    // TODO: remove eclipse files checkbox
@@ -60,7 +62,6 @@ public class ProjectImportView extends ViewPart {
    public static final String ID = "org.eclipse.m2e.importview.views.ProjectImportView";
 
    private String rootDirectory;
-   // TODO: use Set?
    private List<MavenProjectInfo> projectsToImport = new ArrayList<>();
 
    // UI Elements
@@ -89,9 +90,7 @@ public class ProjectImportView extends ViewPart {
 
       final Label selectRootDirectoryLabel = new Label(left, SWT.NONE);
       selectRootDirectoryLabel.setLayoutData(new GridData());
-      // FIXME: externalize Strings
-      // selectRootDirectoryLabel.setText(Messages.wizardImportPageRoot);
-      selectRootDirectoryLabel.setText("Root Directory:");
+      selectRootDirectoryLabel.setText(Messages.labelRootDirectory);
 
       // TODO: Fill with previously used Repos
       rootDirectoryCombo = new Combo(left, SWT.READ_ONLY);
@@ -99,16 +98,13 @@ public class ProjectImportView extends ViewPart {
       rootDirectoryCombo.addSelectionListener(new RootDirectoryComboSelectionHandler());
 
       final Button browseButton = new Button(left, SWT.NONE);
-      // FIXME: externalize Strings
-      // browseButton.setText(Messages.wizardImportPageBrowse);
-      browseButton.setText("Browse...");
+      browseButton.setText(Messages.buttonBrowseRootDirectory);
       browseButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
       browseButton.addSelectionListener(new BrowseForDirectoryHandler(parent));
 
       final Label filterLabel = new Label(left, SWT.NONE);
       filterLabel.setLayoutData(new GridData());
-      // FIXME: externalize Strings
-      filterLabel.setText("Filter:");
+      filterLabel.setText(Messages.labelFilterProjects);
 
       filterText = new Text(left, SWT.BORDER);
       filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
@@ -116,9 +112,7 @@ public class ProjectImportView extends ViewPart {
 
       final Label projectsLabel = new Label(left, SWT.NONE);
       projectsLabel.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
-      // FIXME: externalize Strings
-      // projectsLabel.setText(Messages.wizardImportPageProjects);
-      projectsLabel.setText("Projects:");
+      projectsLabel.setText(Messages.labelProjectTreeViewer);
 
       projectTreeViewer = new TreeViewer(left, SWT.BORDER | SWT.MULTI);
       projectTreeViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
@@ -129,16 +123,13 @@ public class ProjectImportView extends ViewPart {
       projectTree.setLayoutData(projectTreeData);
 
       final Button addAllButton = new Button(center, SWT.NONE);
-      // FIXME: externalize Strings
-      // browseButton.setText(Messages.wizardImportPageBrowse);
       addAllButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_ARROW_RIGHT));
       addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
       addAllButton.addSelectionListener(new AddAllSelectedProjectsToImportListHandler());
 
       final Label projectImportLabel = new Label(right, SWT.NONE);
       projectImportLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-      // FIXME: externalize Strings
-      projectImportLabel.setText("Projects to be imported:");
+      projectImportLabel.setText(Messages.labelProjectImportList);
 
       projectImportListViewer = new ListViewer(right, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
       projectImportListViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
@@ -150,15 +141,12 @@ public class ProjectImportView extends ViewPart {
       projectList.setLayoutData(projectListData);
 
       final Button clearProjectListButton = new Button(right, SWT.NONE);
-      // FIXME: externalize Strings
-      clearProjectListButton.setText("Clear");
+      clearProjectListButton.setText(Messages.buttonClearProjectList);
       clearProjectListButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
       clearProjectListButton.addSelectionListener(new ClearProjectsToImportListHandler());
 
       final Button importButton = new Button(right, SWT.NONE);
-      // FIXME: externalize Strings
-      // browseButton.setText(Messages.wizardImportPageBrowse);
-      importButton.setText("Import Projects");
+      importButton.setText(Messages.buttonImportProjects);
       importButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
       importButton.addSelectionListener(new ImportProjectsHandler());
    }
@@ -232,10 +220,8 @@ public class ProjectImportView extends ViewPart {
 
       public void widgetSelected(SelectionEvent e) {
          DirectoryDialog dialog = new DirectoryDialog(parent.getShell(), SWT.NONE);
-         // FIXME: externalize Strings
-         // dialog.setText(Messages.wizardImportPageSelectRootFolder);
-         dialog.setText("Select Root Directory");
-         dialog.setMessage("Please select root directory of Maven project(s).");
+         dialog.setText(Messages.selectRootDirectoryDialogText);
+         dialog.setMessage(Messages.selectRootDirectoryDialogMessage);
          String currentRootDirectory = rootDirectoryCombo.getText();
          if (currentRootDirectory.length() == 0) {
             currentRootDirectory = ResourcesPlugin.getWorkspace().getRoot().getLocation().toPortableString();
