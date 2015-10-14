@@ -13,15 +13,11 @@
 package org.eclipse.m2e.importview.views;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
-import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.embedder.MavenModelManager;
 import org.eclipse.m2e.core.project.AbstractProjectScanner;
@@ -30,7 +26,6 @@ import org.eclipse.m2e.core.project.MavenProjectInfo;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -49,8 +44,6 @@ import org.eclipse.ui.part.ViewPart;
 public class ProjectImportView extends ViewPart {
 
    public static final String ID = "org.eclipse.m2e.importview.views.ProjectImportView";
-
-   static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
    // UI Elements
    protected Combo rootDirectoryCombo;
@@ -132,71 +125,8 @@ public class ProjectImportView extends ViewPart {
       projectsLabel.setText("Projektekram");
 
       projectTreeViewer = new CheckboxTreeViewer(composite, SWT.BORDER);
-
-      // TODO: externalize contentprovider, format and proofread
-      projectTreeViewer.setContentProvider(new ITreeContentProvider() {
-
-         public Object[] getElements(Object element) {
-            if (element instanceof List) {
-               @SuppressWarnings("unchecked")
-               List<MavenProjectInfo> projects = (List<MavenProjectInfo>) element;
-               return projects.toArray(new MavenProjectInfo[projects.size()]);
-            }
-            return EMPTY_OBJECT_ARRAY;
-         }
-
-         public Object[] getChildren(Object parentElement) {
-            if (parentElement instanceof List) {
-               @SuppressWarnings("unchecked")
-               List<MavenProjectInfo> projects = (List<MavenProjectInfo>) parentElement;
-               return projects.toArray(new MavenProjectInfo[projects.size()]);
-            } else if (parentElement instanceof MavenProjectInfo) {
-               MavenProjectInfo mavenProjectInfo = (MavenProjectInfo) parentElement;
-               Collection<MavenProjectInfo> projects = mavenProjectInfo.getProjects();
-               return projects.toArray(new MavenProjectInfo[projects.size()]);
-            }
-            return EMPTY_OBJECT_ARRAY;
-         }
-
-         public Object getParent(Object element) {
-            return null;
-         }
-
-         public boolean hasChildren(Object parentElement) {
-            if (parentElement instanceof List) {
-               List<?> projects = (List<?>) parentElement;
-               return !projects.isEmpty();
-            } else if (parentElement instanceof MavenProjectInfo) {
-               MavenProjectInfo mavenProjectInfo = (MavenProjectInfo) parentElement;
-               return !mavenProjectInfo.getProjects().isEmpty();
-            }
-            return false;
-         }
-
-         public void dispose() {
-         }
-
-         public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-         }
-      });
-
-      // TODO: externalize label provider, format and proofread
-      projectTreeViewer.setLabelProvider(new LabelProvider() {
-
-         @Override
-         public String getText(Object element) {
-            // TODO: formatted text (highlighting of differentiation)
-            // FIXME: nullsafety
-            return ((MavenProjectInfo) element).getModel().getArtifactId();
-         }
-
-         @Override
-         public Image getImage(Object element) {
-            // FIXME: nullsafety
-            // FIXME: implement
-            return null;
-         }
-      });
+      projectTreeViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
+      projectTreeViewer.setLabelProvider(new ProjectSelectionLabelProvider());
 
       final Tree projectTree = projectTreeViewer.getTree();
       GridData projectTreeData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 5);
