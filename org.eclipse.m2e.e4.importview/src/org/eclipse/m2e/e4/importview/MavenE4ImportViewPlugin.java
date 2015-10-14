@@ -12,59 +12,59 @@
 
 package org.eclipse.m2e.e4.importview;
 
-import org.osgi.framework.BundleContext;
-
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Plugin;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
-
+import org.osgi.framework.BundleContext;
 
 public class MavenE4ImportViewPlugin extends AbstractUIPlugin {
 
-  public static final String PLUGIN_ID = "org.eclipse.m2e.e4.importview";
+   public static final String PLUGIN_ID = "org.eclipse.m2e.e4.importview";
 
-  private static MavenE4ImportViewPlugin instance;
+   public static final String ICON_ARROW_RIGHT = "icons/arrow_right.gif";
 
-  public MavenE4ImportViewPlugin() {
-    MavenE4ImportViewPlugin.instance = this;
-  }
+   private static MavenE4ImportViewPlugin instance;
 
-  @Override
-  public void start(BundleContext context) throws Exception {
-    super.start(context);
-  }
+   public MavenE4ImportViewPlugin() {
+      MavenE4ImportViewPlugin.instance = this;
+   }
 
-  @Override
-  public void stop(BundleContext context) throws Exception {
-    super.stop(context);
-  }
+   @Override
+   public void start(BundleContext context) throws Exception {
+      super.start(context);
+      getImageRegistry().put(ICON_ARROW_RIGHT, imageDescriptorFromPlugin(PLUGIN_ID, ICON_ARROW_RIGHT));
+   }
 
-  /**
-   * Logs given message with given status.
-   * 
-   * @param status status of message
-   * @param message text of message
-   * @see IStatus
-   */
-  public void log(int status, String message) {
-    this.getLog().log(new Status(status, PLUGIN_ID, message));
-  }
+   @Override
+   public void stop(BundleContext context) throws Exception {
+      super.stop(context);
+   }
 
-  /**
-   * Logs given message with given status and throwable.
-   * 
-   * @param status status of message
-   * @param message text of message
-   * @param throwable Throwable
-   * @see IStatus
-   */
-  public void log(int status, String message, Throwable throwable) {
-    this.getLog().log(new Status(status, PLUGIN_ID, message, throwable));
-  }
+   /**
+    * Logs given message with given status.
+    * 
+    * @param status status of message
+    * @param message text of message
+    * @see IStatus
+    */
+   public void log(int status, String message) {
+      this.getLog().log(new Status(status, PLUGIN_ID, message));
+   }
 
-  public static MavenE4ImportViewPlugin getDefault() {
-    return instance;
-  }
+   /**
+    * Logs given message with given status and throwable.
+    * 
+    * @param status status of message
+    * @param message text of message
+    * @param throwable Throwable
+    * @see IStatus
+    */
+   public void log(int status, String message, Throwable throwable) {
+      this.getLog().log(new Status(status, PLUGIN_ID, message, throwable));
+   }
+
+   public static MavenE4ImportViewPlugin getDefault() {
+      return instance;
+   }
 
 }

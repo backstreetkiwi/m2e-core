@@ -72,16 +72,20 @@ public class ProjectImportView extends ViewPart {
    @Override
    public void createPartControl(final Composite parent) {
 
-      parent.setLayout(new GridLayout(3, true));
+      parent.setLayout(new GridLayout(3, false));
 
       Composite left = new Composite(parent, SWT.NONE);
       left.setLayout(new GridLayout(3, false));
+      GridData leftCompositeLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
+      left.setLayoutData(leftCompositeLayoutData);
 
       Composite center = new Composite(parent, SWT.NONE);
-      center.setLayout(new GridLayout(3, false));
+      center.setLayout(new GridLayout(1, false));
 
       Composite right = new Composite(parent, SWT.NONE);
-      right.setLayout(new GridLayout(3, false));
+      right.setLayout(new GridLayout(2, true));
+      GridData rightCompositeLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
+      right.setLayoutData(rightCompositeLayoutData);
 
       final Label selectRootDirectoryLabel = new Label(left, SWT.NONE);
       selectRootDirectoryLabel.setLayoutData(new GridData());
@@ -107,11 +111,11 @@ public class ProjectImportView extends ViewPart {
       filterLabel.setText("Filter:");
 
       filterText = new Text(left, SWT.BORDER);
-      filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+      filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
       filterText.addModifyListener(new FilterChangedHandler());
 
       final Label projectsLabel = new Label(left, SWT.NONE);
-      projectsLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
+      projectsLabel.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
       // FIXME: externalize Strings
       // projectsLabel.setText(Messages.wizardImportPageProjects);
       projectsLabel.setText("Projects:");
@@ -121,43 +125,42 @@ public class ProjectImportView extends ViewPart {
       projectTreeViewer.setLabelProvider(new ProjectSelectionLabelProvider());
 
       final Tree projectTree = projectTreeViewer.getTree();
-      GridData projectTreeData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 5);
-      projectTreeData.heightHint = 250;
-      projectTreeData.widthHint = 500;
+      GridData projectTreeData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
       projectTree.setLayoutData(projectTreeData);
 
-      // TODO split method here?
+      final Button addAllButton = new Button(center, SWT.NONE);
+      // FIXME: externalize Strings
+      // browseButton.setText(Messages.wizardImportPageBrowse);
+      addAllButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_ARROW_RIGHT));
+      addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      addAllButton.addSelectionListener(new AddAllSelectedProjectsToImportListHandler());
 
       final Label projectImportLabel = new Label(right, SWT.NONE);
-      projectImportLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
+      projectImportLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
       // FIXME: externalize Strings
       projectImportLabel.setText("Projects to be imported:");
 
-      projectImportListViewer = new ListViewer(right, SWT.BORDER | SWT.MULTI);
+      projectImportListViewer = new ListViewer(right, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
       projectImportListViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
       projectImportListViewer.setLabelProvider(new ProjectSelectionLabelProvider());
       projectImportListViewer.setInput(this.projectsToImport);
 
       final org.eclipse.swt.widgets.List projectList = projectImportListViewer.getList();
-      GridData projectListData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 5);
-      projectListData.heightHint = 250;
-      projectListData.widthHint = 500;
+      GridData projectListData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
       projectList.setLayoutData(projectListData);
 
-      final Button addAllButton = new Button(center, SWT.NONE);
+      final Button clearProjectListButton = new Button(right, SWT.NONE);
       // FIXME: externalize Strings
-      // browseButton.setText(Messages.wizardImportPageBrowse);
-      addAllButton.setText(">");
-      addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-      addAllButton.addSelectionListener(new AddAllProjectsToImportListHandler());
+      clearProjectListButton.setText("Clear");
+      clearProjectListButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+      clearProjectListButton.addSelectionListener(new ClearProjectsToImportListHandler());
 
-      final Button importButton = new Button(center, SWT.NONE);
+      final Button importButton = new Button(right, SWT.NONE);
       // FIXME: externalize Strings
       // browseButton.setText(Messages.wizardImportPageBrowse);
-      importButton.setText("IMPORT");
-      importButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      importButton.setText("Import Projects");
+      importButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
       importButton.addSelectionListener(new ImportProjectsHandler());
-
    }
 
    @Override
@@ -303,7 +306,7 @@ public class ProjectImportView extends ViewPart {
     * 
     * @author Nikolaus Winter, comdirect bank AG
     */
-   private final class AddAllProjectsToImportListHandler extends SelectionAdapter {
+   private final class AddAllSelectedProjectsToImportListHandler extends SelectionAdapter {
       @SuppressWarnings("unchecked")
       public void widgetSelected(SelectionEvent e) {
          ITreeSelection selection = projectTreeViewer.getStructuredSelection();
@@ -312,8 +315,9 @@ public class ProjectImportView extends ViewPart {
             MavenProjectInfo projectInfo = iterator.next();
             addProjectToImportList(projectInfo);
          }
+         projectTreeViewer.setSelection(null);
+         projectTreeViewer.refresh();
          projectImportListViewer.refresh();
-         // projectImportListViewer.setInput(projectsToImport);
       }
    }
 
@@ -326,9 +330,24 @@ public class ProjectImportView extends ViewPart {
       @SuppressWarnings("restriction")
       public void widgetSelected(SelectionEvent e) {
          // FIXME: Check for already imported projects
-         ImportMavenProjectsJob job = new ImportMavenProjectsJob(projectsToImport, new ArrayList<IWorkingSet>(), new ProjectImportConfiguration());
+         ImportMavenProjectsJob job = new ImportMavenProjectsJob(new ArrayList<>(projectsToImport), new ArrayList<IWorkingSet>(),
+               new ProjectImportConfiguration());
          job.setRule(MavenPlugin.getProjectConfigurationManager().getRule());
          job.schedule();
+         projectsToImport.clear();
+         projectImportListViewer.refresh();
+      }
+   }
+
+   /**
+    * Handles Event "Clear projects to import list"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class ClearProjectsToImportListHandler extends SelectionAdapter {
+      public void widgetSelected(SelectionEvent e) {
+         projectsToImport.clear();
+         projectImportListViewer.refresh();
       }
    }
 
