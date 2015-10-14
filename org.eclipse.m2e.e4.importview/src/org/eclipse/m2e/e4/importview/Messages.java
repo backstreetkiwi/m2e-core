@@ -30,18 +30,6 @@ public class Messages extends NLS {
    public static String buttonImportProjects;
    public static String selectRootDirectoryDialogText;
    public static String selectRootDirectoryDialogMessage;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
-   // public static String labelSelectRootDirectory;
 
    static {
       // initialize resource bundle
