@@ -19,12 +19,15 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
+import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.embedder.MavenModelManager;
 import org.eclipse.m2e.core.project.LocalProjectScanner;
 import org.eclipse.m2e.core.project.MavenProjectInfo;
 import org.eclipse.m2e.e4.importview.MavenE4ImportViewPlugin;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -34,6 +37,7 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.ui.part.ViewPart;
 
@@ -49,8 +53,9 @@ public class ProjectImportView extends ViewPart {
    private String rootDirectory;
 
    // UI Elements
-   protected Combo rootDirectoryCombo;
-   protected CheckboxTreeViewer projectTreeViewer;
+   private Combo rootDirectoryCombo;
+   private CheckboxTreeViewer projectTreeViewer;
+   private Text filterText;
 
    @Override
    public void createPartControl(final Composite parent) {
@@ -67,7 +72,6 @@ public class ProjectImportView extends ViewPart {
       // TODO: Fill with previously used Repos
       rootDirectoryCombo = new Combo(composite, SWT.READ_ONLY);
       rootDirectoryCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-      rootDirectoryCombo.setFocus();
       rootDirectoryCombo.addSelectionListener(new RootDirectoryComboSelectionHandler());
 
       final Button browseButton = new Button(composite, SWT.NONE);
@@ -77,8 +81,14 @@ public class ProjectImportView extends ViewPart {
       browseButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
       browseButton.addSelectionListener(new BrowseForDirectoryHandler(parent));
 
-      // TODO: use filters
-      // projectTreeViewer.setFilters(filters);
+      final Label filterLabel = new Label(composite, SWT.NONE);
+      filterLabel.setLayoutData(new GridData());
+      // FIXME: externalize Strings
+      filterLabel.setText("Filter");
+
+      filterText = new Text(composite, SWT.BORDER);
+      filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+      filterText.addModifyListener(new FilterChangedHandler());
 
       final Label projectsLabel = new Label(composite, SWT.NONE);
       projectsLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
@@ -202,6 +212,25 @@ public class ProjectImportView extends ViewPart {
          rootDirectory = selectedRootDirectory;
       }
 
+   }
+
+   /**
+    * Handles Event "Filter text changed"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class FilterChangedHandler implements ModifyListener {
+
+      @Override
+      public void modifyText(ModifyEvent e) {
+         final String newText = filterText.getText();
+         if (newText.trim().length() == 0) {
+            projectTreeViewer.resetFilters();
+            return;
+         }
+         projectTreeViewer.setFilters(new ViewerFilter[] { new MavenProjectInfoFilter(newText) });
+         projectTreeViewer.expandAll();
+      }
    }
 
 }
