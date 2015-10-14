@@ -295,7 +295,7 @@ public class ProjectImportView extends ViewPart {
    private final class AddAllSelectedProjectsToImportListHandler extends SelectionAdapter {
       @SuppressWarnings("unchecked")
       public void widgetSelected(SelectionEvent e) {
-         ITreeSelection selection = projectTreeViewer.getStructuredSelection();
+         ITreeSelection selection = (ITreeSelection) projectTreeViewer.getSelection();
          Iterator<MavenProjectInfo> iterator = selection.iterator();
          while (iterator.hasNext()) {
             MavenProjectInfo projectInfo = iterator.next();
