@@ -30,6 +30,7 @@ public class Messages extends NLS {
    public static String buttonImportProjects;
    public static String selectRootDirectoryDialogText;
    public static String selectRootDirectoryDialogMessage;
+   public static String labelRemoveEclipseFiles;
 
    static {
       // initialize resource bundle
