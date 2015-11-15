@@ -13,9 +13,12 @@ package org.eclipse.m2e.importview.views;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.maven.model.Model;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -25,6 +28,7 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.eclipse.m2e.core.embedder.MavenModelManager;
+import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.eclipse.m2e.core.project.LocalProjectScanner;
 import org.eclipse.m2e.core.project.MavenProjectInfo;
 import org.eclipse.m2e.core.project.ProjectImportConfiguration;
@@ -68,6 +72,7 @@ public class ProjectImportView extends ViewPart {
    private TreeViewer projectTreeViewer;
    private Text filterText;
    private ListViewer projectImportListViewer;
+   private Button removeEclipseFilesCheckbox;
 
    @Override
    public void createPartControl(final Composite parent) {
@@ -150,6 +155,12 @@ public class ProjectImportView extends ViewPart {
       importButton.setText(Messages.buttonImportProjects);
       importButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
       importButton.addSelectionListener(new ImportProjectsHandler());
+
+      removeEclipseFilesCheckbox = new Button(right, SWT.CHECK);
+      removeEclipseFilesCheckbox.setText(Messages.labelRemoveEclipseFiles);
+      removeEclipseFilesCheckbox.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+      // FIXME: remember last state
+      removeEclipseFilesCheckbox.setSelection(true);
    }
 
    @Override
@@ -309,6 +320,7 @@ public class ProjectImportView extends ViewPart {
       }
    }
 
+   // TODO: QA
    /**
     * Handles Event "Import all projects of import list"
     * 
@@ -316,14 +328,70 @@ public class ProjectImportView extends ViewPart {
     */
    private final class ImportProjectsHandler extends SelectionAdapter {
       public void widgetSelected(SelectionEvent e) {
-         // FIXME: Check for already imported projects
-         ImportMavenProjectsJob job = new ImportMavenProjectsJob(new ArrayList<>(projectsToImport), new ArrayList<IWorkingSet>(),
-               new ProjectImportConfiguration());
+         List<MavenProjectInfo> projectsToImport2 = getProjectsToImport();
+         if (removeEclipseFilesCheckbox.getSelection()) {
+            for (Iterator iterator = projectsToImport2.iterator(); iterator.hasNext();) {
+               MavenProjectInfo mavenProjectInfo = (MavenProjectInfo) iterator.next();
+               removeEclipseFiles(mavenProjectInfo.getPomFile().getParentFile());
+            }
+         }
+         ImportMavenProjectsJob job = new ImportMavenProjectsJob(projectsToImport2, new ArrayList<IWorkingSet>(), new ProjectImportConfiguration());
          job.setRule(MavenPlugin.getProjectConfigurationManager().getRule());
          job.schedule();
          projectsToImport.clear();
          projectImportListViewer.refresh();
       }
+
+      private List<MavenProjectInfo> getProjectsToImport() {
+         List<MavenProjectInfo> projectList = new ArrayList<>();
+         Set<String> projectsInWorkspace = getGroupIdAndArtifactIdOfAllProjectsInWorkspace();
+         Iterator<MavenProjectInfo> iterator = projectsToImport.iterator();
+         MavenProjectInfo mavenProjectInfo;
+         Model mavenModel;
+         while (iterator.hasNext()) {
+            mavenProjectInfo = (MavenProjectInfo) iterator.next();
+            mavenModel = mavenProjectInfo.getModel();
+            String groupId = getGroupId(mavenModel);
+            if (!projectsInWorkspace.contains(String.format("%s:%s", groupId, mavenModel.getArtifactId()))) {
+               projectList.add(mavenProjectInfo);
+            } else {
+            }
+         }
+         return projectList;
+      }
+
+      private String getGroupId(Model mavenModel) {
+         if (mavenModel.getGroupId() != null) {
+            return mavenModel.getGroupId();
+         }
+         if (mavenModel.getParent() != null) {
+            return mavenModel.getParent().getGroupId();
+         }
+         return null;
+      }
+
+      private Set<String> getGroupIdAndArtifactIdOfAllProjectsInWorkspace() {
+         HashSet<String> result = new HashSet<>();
+         IMavenProjectFacade[] mavenProjectFacades = MavenPlugin.getMavenProjectRegistry().getProjects();
+         for (int i = 0; i < mavenProjectFacades.length; i++) {
+            result.add(String.format("%s:%s", mavenProjectFacades[i].getArtifactKey().getGroupId(), mavenProjectFacades[i].getArtifactKey().getArtifactId()));
+         }
+         return result;
+      }
+
+      private void removeEclipseFiles(File projectFolder) {
+         new File(projectFolder, ".project").delete();
+         new File(projectFolder, ".classpath").delete();
+         File settingsDirectory = new File(projectFolder, ".settings");
+         if (settingsDirectory.isDirectory()) {
+            File[] settingsFiles = settingsDirectory.listFiles();
+            for (int i = 0; i < settingsFiles.length; i++) {
+               settingsFiles[i].delete();
+            }
+            settingsDirectory.delete();
+         }
+      }
+
    }
 
    /**
