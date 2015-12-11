@@ -440,6 +440,9 @@ public class ProjectImportView extends ViewPart {
    @Override
    public void init(IViewSite site, IMemento memento) throws PartInitException {
       super.init(site, memento);
+      if (memento==null) {
+         return;
+      }
       String rootDirectories = memento.getTextData();
       if (rootDirectories == null) {
          return;
