@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.apache.maven.model.Model;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -51,7 +52,10 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
+import org.eclipse.ui.IMemento;
+import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkingSet;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
 
 /**
@@ -66,6 +70,7 @@ public class ProjectImportView extends ViewPart {
 
    private String rootDirectory;
    private List<MavenProjectInfo> projectsToImport = new ArrayList<>();
+   private List<String> savedRootDirectories;
 
    // UI Elements
    private Combo rootDirectoryCombo;
@@ -96,10 +101,14 @@ public class ProjectImportView extends ViewPart {
       selectRootDirectoryLabel.setLayoutData(new GridData());
       selectRootDirectoryLabel.setText(Messages.labelRootDirectory);
 
-      // TODO: Fill with previously used Repos
       rootDirectoryCombo = new Combo(left, SWT.READ_ONLY);
       rootDirectoryCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
       rootDirectoryCombo.addSelectionListener(new RootDirectoryComboSelectionHandler());
+      if (savedRootDirectories != null && !savedRootDirectories.isEmpty()) {
+         for (String savedRootDirectory : savedRootDirectories) {
+            rootDirectoryCombo.add(savedRootDirectory);
+         }
+      }
 
       final Button browseButton = new Button(left, SWT.NONE);
       browseButton.setText(Messages.buttonBrowseRootDirectory);
@@ -426,6 +435,36 @@ public class ProjectImportView extends ViewPart {
          projectsToImport.clear();
          projectImportListViewer.refresh();
       }
+   }
+
+   @Override
+   public void init(IViewSite site, IMemento memento) throws PartInitException {
+      super.init(site, memento);
+      String rootDirectories = memento.getTextData();
+      if (rootDirectories == null) {
+         return;
+      }
+      StringTokenizer tokenizer = new StringTokenizer(rootDirectories, "#");
+      if (tokenizer.countTokens() == 0) {
+         return;
+      }
+      savedRootDirectories = new ArrayList<>();
+      while (tokenizer.hasMoreTokens()) {
+         savedRootDirectories.add(tokenizer.nextToken());
+      }
+
+   }
+
+   @Override
+   public void saveState(IMemento memento) {
+      String[] rootDirectories = rootDirectoryCombo.getItems();
+      StringBuffer textData = new StringBuffer();
+      for (int i = 0; i < rootDirectories.length; i++) {
+         textData.append("#");
+         textData.append(rootDirectories[i]);
+      }
+      memento.putTextData(textData.toString());
+      super.saveState(memento);
    }
 
 }
