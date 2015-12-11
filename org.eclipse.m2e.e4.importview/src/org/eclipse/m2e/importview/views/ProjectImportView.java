@@ -22,6 +22,8 @@ import org.apache.maven.model.Model;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ITreeSelection;
 import org.eclipse.jface.viewers.ListViewer;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -59,8 +61,6 @@ import org.eclipse.ui.part.ViewPart;
  */
 @SuppressWarnings("restriction")
 public class ProjectImportView extends ViewPart {
-
-   // TODO: remove eclipse files checkbox
 
    public static final String ID = "org.eclipse.m2e.importview.views.ProjectImportView";
 
@@ -122,6 +122,7 @@ public class ProjectImportView extends ViewPart {
       projectTreeViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
       projectTreeViewer.setLabelProvider(new ProjectSelectionLabelProvider());
       projectTreeViewer.setComparator(new ProjectSelectionViewerComparator());
+      projectTreeViewer.addDoubleClickListener(new SelectProjectByDoubleClickHandler());
 
       final Tree projectTree = projectTreeViewer.getTree();
       GridData projectTreeData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
@@ -165,7 +166,6 @@ public class ProjectImportView extends ViewPart {
 
    @Override
    public void setFocus() {
-      // TODO: rethink which control is focused best
       rootDirectoryCombo.setFocus();
    }
 
@@ -205,6 +205,21 @@ public class ProjectImportView extends ViewPart {
       projectTreeViewer.setInput(projectList);
       projectTreeViewer.expandAll();
       return true;
+   }
+
+   /**
+    * Adds all selected {@link MavenProjectInfo} to the list to import.
+    */
+   private void addAllSelectedProjectsToImportList() {
+      ITreeSelection selection = (ITreeSelection) projectTreeViewer.getSelection();
+      Iterator<MavenProjectInfo> iterator = selection.iterator();
+      while (iterator.hasNext()) {
+         MavenProjectInfo projectInfo = iterator.next();
+         addProjectToImportList(projectInfo);
+      }
+      projectTreeViewer.setSelection(null);
+      projectTreeViewer.refresh();
+      projectImportListViewer.refresh();
    }
 
    /**
@@ -307,16 +322,8 @@ public class ProjectImportView extends ViewPart {
     */
    private final class AddAllSelectedProjectsToImportListHandler extends SelectionAdapter {
       @SuppressWarnings("unchecked")
-      public void widgetSelected(SelectionEvent e) {
-         ITreeSelection selection = (ITreeSelection) projectTreeViewer.getSelection();
-         Iterator<MavenProjectInfo> iterator = selection.iterator();
-         while (iterator.hasNext()) {
-            MavenProjectInfo projectInfo = iterator.next();
-            addProjectToImportList(projectInfo);
-         }
-         projectTreeViewer.setSelection(null);
-         projectTreeViewer.refresh();
-         projectImportListViewer.refresh();
+      public void widgetSelected(SelectionEvent event) {
+         addAllSelectedProjectsToImportList();
       }
    }
 
@@ -327,7 +334,7 @@ public class ProjectImportView extends ViewPart {
     * @author Nikolaus Winter, comdirect bank AG
     */
    private final class ImportProjectsHandler extends SelectionAdapter {
-      public void widgetSelected(SelectionEvent e) {
+      public void widgetSelected(SelectionEvent event) {
          List<MavenProjectInfo> projectsToImport2 = getProjectsToImport();
          if (removeEclipseFilesCheckbox.getSelection()) {
             for (Iterator iterator = projectsToImport2.iterator(); iterator.hasNext();) {
@@ -390,6 +397,21 @@ public class ProjectImportView extends ViewPart {
             }
             settingsDirectory.delete();
          }
+      }
+
+   }
+
+   /**
+    * Handles Event "Double Click on Project in Tree"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    *
+    */
+   private final class SelectProjectByDoubleClickHandler implements IDoubleClickListener {
+
+      @Override
+      public void doubleClick(DoubleClickEvent event) {
+         addAllSelectedProjectsToImportList();
       }
 
    }
