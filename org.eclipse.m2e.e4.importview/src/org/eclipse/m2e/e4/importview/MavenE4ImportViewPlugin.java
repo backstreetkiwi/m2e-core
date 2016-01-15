@@ -22,6 +22,7 @@ public class MavenE4ImportViewPlugin extends AbstractUIPlugin {
    public static final String PLUGIN_ID = "org.eclipse.m2e.e4.importview";
 
    public static final String ICON_ARROW_RIGHT = "icons/arrow_right.gif";
+   public static final String ICON_ARROW_LEFT = "icons/arrow_left.gif";
 
    private static MavenE4ImportViewPlugin instance;
 
@@ -33,6 +34,7 @@ public class MavenE4ImportViewPlugin extends AbstractUIPlugin {
    public void start(BundleContext context) throws Exception {
       super.start(context);
       getImageRegistry().put(ICON_ARROW_RIGHT, imageDescriptorFromPlugin(PLUGIN_ID, ICON_ARROW_RIGHT));
+      getImageRegistry().put(ICON_ARROW_LEFT, imageDescriptorFromPlugin(PLUGIN_ID, ICON_ARROW_LEFT));
    }
 
    @Override
