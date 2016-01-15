@@ -25,6 +25,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeSelection;
 import org.eclipse.jface.viewers.ListViewer;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -142,6 +143,11 @@ public class ProjectImportView extends ViewPart {
       addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
       addAllButton.addSelectionListener(new AddAllSelectedProjectsToImportListHandler());
 
+      final Button removeAllButton = new Button(center, SWT.NONE);
+      removeAllButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_ARROW_LEFT));
+      removeAllButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      removeAllButton.addSelectionListener(new RemoveAllSelectedProjectsFromImportListHandler());
+
       final Label projectImportLabel = new Label(right, SWT.NONE);
       projectImportLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
       projectImportLabel.setText(Messages.labelProjectImportList);
@@ -151,6 +157,7 @@ public class ProjectImportView extends ViewPart {
       projectImportListViewer.setContentProvider(new ProjectSelectionTreeContentProvider());
       projectImportListViewer.setLabelProvider(new ProjectSelectionLabelProvider());
       projectImportListViewer.setInput(this.projectsToImport);
+      projectImportListViewer.addDoubleClickListener(new DeselectProjectByDoubleClickHandler());
 
       final org.eclipse.swt.widgets.List projectList = projectImportListViewer.getList();
       GridData projectListData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
@@ -232,6 +239,21 @@ public class ProjectImportView extends ViewPart {
    }
 
    /**
+    * Removes all selected {@link MavenProjectInfo} from the list to import.
+    */
+   private void removeAllSelectedProjectsFromImportList() {
+      IStructuredSelection selection = (IStructuredSelection) projectImportListViewer.getSelection();
+      Iterator<MavenProjectInfo> iterator = selection.iterator();
+      while (iterator.hasNext()) {
+         MavenProjectInfo projectInfo = iterator.next();
+         removeProjectFromImportList(projectInfo);
+      }
+      projectImportListViewer.setSelection(null);
+      projectImportListViewer.refresh();
+      projectTreeViewer.refresh();
+   }
+
+   /**
     * Adds given {@link MavenProjectInfo} to the list to import.
     * 
     * @param projectInfo Maven project to add
@@ -239,6 +261,17 @@ public class ProjectImportView extends ViewPart {
    private void addProjectToImportList(MavenProjectInfo projectInfo) {
       if (!projectsToImport.contains(projectInfo)) {
          projectsToImport.add(projectInfo);
+      }
+   }
+
+   /**
+    * Removes given {@link MavenProjectInfo} from the list to import.
+    * 
+    * @param projectInfo Maven project to add
+    */
+   private void removeProjectFromImportList(MavenProjectInfo projectInfo) {
+      if (projectsToImport.contains(projectInfo)) {
+         projectsToImport.remove(projectInfo);
       }
    }
 
@@ -325,7 +358,7 @@ public class ProjectImportView extends ViewPart {
    }
 
    /**
-    * Handles Event "Add all projects to import list"
+    * Handles Event "Add all selected projects to import list"
     * 
     * @author Nikolaus Winter, comdirect bank AG
     */
@@ -333,6 +366,18 @@ public class ProjectImportView extends ViewPart {
       @SuppressWarnings("unchecked")
       public void widgetSelected(SelectionEvent event) {
          addAllSelectedProjectsToImportList();
+      }
+   }
+
+   /**
+    * Handles Event "Remove all selected projects to import list"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class RemoveAllSelectedProjectsFromImportListHandler extends SelectionAdapter {
+      @SuppressWarnings("unchecked")
+      public void widgetSelected(SelectionEvent event) {
+         removeAllSelectedProjectsFromImportList();
       }
    }
 
@@ -426,6 +471,21 @@ public class ProjectImportView extends ViewPart {
    }
 
    /**
+    * Handles Event "Double Click on List of Projects to import"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    *
+    */
+   private final class DeselectProjectByDoubleClickHandler implements IDoubleClickListener {
+
+      @Override
+      public void doubleClick(DoubleClickEvent event) {
+         removeAllSelectedProjectsFromImportList();
+      }
+
+   }
+
+   /**
     * Handles Event "Clear projects to import list"
     * 
     * @author Nikolaus Winter, comdirect bank AG
@@ -440,7 +500,7 @@ public class ProjectImportView extends ViewPart {
    @Override
    public void init(IViewSite site, IMemento memento) throws PartInitException {
       super.init(site, memento);
-      if (memento==null) {
+      if (memento == null) {
          return;
       }
       String rootDirectories = memento.getTextData();
