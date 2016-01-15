@@ -86,7 +86,7 @@ public class ProjectImportView extends ViewPart {
       parent.setLayout(new GridLayout(3, false));
 
       Composite left = new Composite(parent, SWT.NONE);
-      left.setLayout(new GridLayout(3, false));
+      left.setLayout(new GridLayout(4, false));
       GridData leftCompositeLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
       left.setLayoutData(leftCompositeLayoutData);
 
@@ -116,12 +116,17 @@ public class ProjectImportView extends ViewPart {
       browseButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
       browseButton.addSelectionListener(new BrowseForDirectoryHandler(parent));
 
+      final Button reloadButton = new Button(left, SWT.NONE);
+      reloadButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_RELOAD));
+      reloadButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      reloadButton.addSelectionListener(new ReloadRepoHandler());
+
       final Label filterLabel = new Label(left, SWT.NONE);
       filterLabel.setLayoutData(new GridData());
       filterLabel.setText(Messages.labelFilterProjects);
 
       filterText = new Text(left, SWT.BORDER);
-      filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1));
+      filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
       filterText.addModifyListener(new FilterChangedHandler());
 
       final Label projectsLabel = new Label(left, SWT.NONE);
@@ -135,7 +140,7 @@ public class ProjectImportView extends ViewPart {
       projectTreeViewer.addDoubleClickListener(new SelectProjectByDoubleClickHandler());
 
       final Tree projectTree = projectTreeViewer.getTree();
-      GridData projectTreeData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
+      GridData projectTreeData = new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1);
       projectTree.setLayoutData(projectTreeData);
 
       final Button addAllButton = new Button(center, SWT.NONE);
@@ -309,6 +314,24 @@ public class ProjectImportView extends ViewPart {
             rootDirectoryCombo.add(newRootDirectory, 0);
             rootDirectoryCombo.setText(newRootDirectory);
             rootDirectory = newRootDirectory;
+         }
+      }
+   }
+
+   /**
+    * Handles Event "Reload"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class ReloadRepoHandler extends SelectionAdapter {
+      public void widgetSelected(SelectionEvent e) {
+         String rootDirectory = ProjectImportView.this.rootDirectory;
+         if (rootDirectory != null) {
+            boolean nonEmptyListLoaded = loadProjectSelectionList(rootDirectory);
+            if (!nonEmptyListLoaded) {
+               // TODO: inform user (msg)
+               return;
+            }
          }
       }
    }
