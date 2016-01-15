@@ -23,6 +23,7 @@ public class MavenE4ImportViewPlugin extends AbstractUIPlugin {
 
    public static final String ICON_ARROW_RIGHT = "icons/arrow_right.gif";
    public static final String ICON_ARROW_LEFT = "icons/arrow_left.gif";
+   public static final String ICON_RELOAD = "icons/reload.gif";
 
    private static MavenE4ImportViewPlugin instance;
 
@@ -35,6 +36,7 @@ public class MavenE4ImportViewPlugin extends AbstractUIPlugin {
       super.start(context);
       getImageRegistry().put(ICON_ARROW_RIGHT, imageDescriptorFromPlugin(PLUGIN_ID, ICON_ARROW_RIGHT));
       getImageRegistry().put(ICON_ARROW_LEFT, imageDescriptorFromPlugin(PLUGIN_ID, ICON_ARROW_LEFT));
+      getImageRegistry().put(ICON_RELOAD, imageDescriptorFromPlugin(PLUGIN_ID, ICON_RELOAD));
    }
 
    @Override
