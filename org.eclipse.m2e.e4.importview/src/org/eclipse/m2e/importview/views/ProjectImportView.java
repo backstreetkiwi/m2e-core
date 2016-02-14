@@ -11,7 +11,11 @@
 
 package org.eclipse.m2e.importview.views;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -50,9 +54,11 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkingSet;
@@ -94,7 +100,7 @@ public class ProjectImportView extends ViewPart {
       center.setLayout(new GridLayout(1, false));
 
       Composite right = new Composite(parent, SWT.NONE);
-      right.setLayout(new GridLayout(2, true));
+      right.setLayout(new GridLayout(6, true));
       GridData rightCompositeLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
       right.setLayoutData(rightCompositeLayoutData);
 
@@ -154,7 +160,7 @@ public class ProjectImportView extends ViewPart {
       removeAllButton.addSelectionListener(new RemoveAllSelectedProjectsFromImportListHandler());
 
       final Label projectImportLabel = new Label(right, SWT.NONE);
-      projectImportLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+      projectImportLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 6, 1));
       projectImportLabel.setText(Messages.labelProjectImportList);
 
       projectImportListViewer = new ListViewer(right, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
@@ -165,22 +171,32 @@ public class ProjectImportView extends ViewPart {
       projectImportListViewer.addDoubleClickListener(new DeselectProjectByDoubleClickHandler());
 
       final org.eclipse.swt.widgets.List projectList = projectImportListViewer.getList();
-      GridData projectListData = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
+      GridData projectListData = new GridData(SWT.FILL, SWT.FILL, true, true, 6, 1);
       projectList.setLayoutData(projectListData);
 
       final Button clearProjectListButton = new Button(right, SWT.NONE);
       clearProjectListButton.setText(Messages.buttonClearProjectList);
-      clearProjectListButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+      clearProjectListButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
       clearProjectListButton.addSelectionListener(new ClearProjectsToImportListHandler());
 
       final Button importButton = new Button(right, SWT.NONE);
       importButton.setText(Messages.buttonImportProjects);
-      importButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+      importButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
       importButton.addSelectionListener(new ImportProjectsHandler());
+
+      final Button exportSelectionButton = new Button(right, SWT.NONE);
+      exportSelectionButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_EXPORT));
+      exportSelectionButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+      exportSelectionButton.addSelectionListener(new ExportSelectionHandler(parent));
+
+      final Button importSelectionButton = new Button(right, SWT.NONE);
+      importSelectionButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_IMPORT));
+      importSelectionButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+      importSelectionButton.addSelectionListener(new ImportSelectionHandler(parent));
 
       removeEclipseFilesCheckbox = new Button(right, SWT.CHECK);
       removeEclipseFilesCheckbox.setText(Messages.labelRemoveEclipseFiles);
-      removeEclipseFilesCheckbox.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+      removeEclipseFilesCheckbox.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 6, 1));
       // FIXME: remember last state
       removeEclipseFilesCheckbox.setSelection(true);
    }
@@ -476,6 +492,171 @@ public class ProjectImportView extends ViewPart {
          }
       }
 
+   }
+
+   /**
+    * Handles Event "Import Selection"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class ImportSelectionHandler extends SelectionAdapter {
+
+      private final Composite parent;
+
+      private ImportSelectionHandler(Composite parent) {
+         this.parent = parent;
+      }
+
+      public void widgetSelected(SelectionEvent event) {
+
+         FileDialog saveFileDialog = new FileDialog(parent.getShell(), SWT.NONE);
+         saveFileDialog.setText("Please select file location and name");
+         saveFileDialog.setFileName("importList.txt");
+         // FIXME ???
+         saveFileDialog.setOverwrite(true);
+         saveFileDialog.open();
+
+         String[] fileNames = saveFileDialog.getFileNames();
+         if (fileNames.length != 1) {
+            // TODO show message
+            return;
+         }
+
+         File file = new File(new File(saveFileDialog.getFilterPath()), fileNames[0]);
+
+         if (!file.exists()) {
+            // TODO show message
+            return;
+         }
+
+         BufferedReader fileReader = null;
+         try {
+            fileReader = new BufferedReader(new FileReader(file));
+            String line = fileReader.readLine();
+            while (line != null) {
+               TreeItem treeItem = getTreeItem(line, projectTreeViewer.getTree().getItem(0));
+               if (treeItem != null && treeItem.getData() instanceof MavenProjectInfo) {
+                  addProjectToImportList((MavenProjectInfo) treeItem.getData());
+               }
+               line = fileReader.readLine();
+            }
+            projectImportListViewer.refresh();
+         } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+         } finally {
+            try {
+               fileReader.close();
+            } catch (IOException e) {
+               // TODO show message, write to error log
+               e.printStackTrace();
+            }
+         }
+
+      }
+
+      private TreeItem getTreeItem(String line, TreeItem treeItem) {
+         if (!line.startsWith("/")) {
+            return null;
+         }
+         if ("/pom.xml".equals(line)) {
+            return treeItem;
+         }
+         int indexOfSecondSlash = line.indexOf("/", 1);
+         if (indexOfSecondSlash == -1) {
+            return null;
+         }
+         String nodeName = line.substring(1, indexOfSecondSlash);
+         if (nodeName.length() == 0) {
+            return null;
+         }
+         TreeItem[] children = treeItem.getItems();
+         int i = 0;
+         TreeItem child = null;
+         while (child == null && i < treeItem.getItemCount()) {
+            if (nodeName.equals(children[i].getText())) {
+               child = children[i];
+            }
+            i++;
+         }
+         if (child == null) {
+            return null;
+         }
+         return getTreeItem(line.substring(1 + nodeName.length(), line.length()), child);
+      }
+
+   }
+
+   /**
+    * Handles Event "Export Selection"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class ExportSelectionHandler extends SelectionAdapter {
+
+      private final Composite parent;
+
+      private ExportSelectionHandler(Composite parent) {
+         this.parent = parent;
+      }
+
+      public void widgetSelected(SelectionEvent event) {
+
+         if (projectsToImport.isEmpty()) {
+            // TODO show message or block button in the first place
+            return;
+         }
+
+         FileDialog saveFileDialog = new FileDialog(parent.getShell(), SWT.NONE);
+         saveFileDialog.setText("Please select file location and name");
+         saveFileDialog.setFileName("importList.txt");
+         // FIXME ???
+         saveFileDialog.setOverwrite(true);
+         saveFileDialog.open();
+
+         String[] fileNames = saveFileDialog.getFileNames();
+         if (fileNames.length != 1) {
+            // TODO show message
+            return;
+         }
+
+         File file = new File(new File(saveFileDialog.getFilterPath()), fileNames[0]);
+
+         StringBuffer fileContent = new StringBuffer();
+         Iterator<MavenProjectInfo> iterator = projectsToImport.iterator();
+         MavenProjectInfo mavenProjectInfo;
+         while (iterator.hasNext()) {
+            mavenProjectInfo = (MavenProjectInfo) iterator.next();
+            fileContent.append(getProjectPath(mavenProjectInfo) + "/pom.xml\n");
+         }
+
+         FileWriter fileWriter = null;
+         try {
+            fileWriter = new FileWriter(file);
+            fileWriter.write(fileContent.toString());
+            fileWriter.flush();
+         } catch (IOException e) {
+            // TODO show message, write to error log
+            e.printStackTrace();
+         } finally {
+            try {
+               fileWriter.close();
+            } catch (IOException e) {
+               // TODO show message, write to error log
+               e.printStackTrace();
+            }
+         }
+
+      }
+
+      private String getProjectPath(MavenProjectInfo projectInfo) {
+         String folderName = projectInfo.getPomFile().getParentFile().getName();
+         if (projectInfo.getParent() == null) {
+            return "";
+         }
+         return getProjectPath(projectInfo.getParent()) + "/" + folderName;
+
+      }
    }
 
    /**
