@@ -92,7 +92,7 @@ public class ProjectImportView extends ViewPart {
       parent.setLayout(new GridLayout(3, false));
 
       Composite left = new Composite(parent, SWT.NONE);
-      left.setLayout(new GridLayout(4, false));
+      left.setLayout(new GridLayout(6, false));
       GridData leftCompositeLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
       left.setLayoutData(leftCompositeLayoutData);
 
@@ -127,12 +127,22 @@ public class ProjectImportView extends ViewPart {
       reloadButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
       reloadButton.addSelectionListener(new ReloadRepoHandler());
 
+      final Button collapseButton = new Button(left, SWT.NONE);
+      collapseButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_COLLAPSE));
+      collapseButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      collapseButton.addSelectionListener(new CollapseTreeHandler());
+
+      final Button expandButton = new Button(left, SWT.NONE);
+      expandButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_EXPAND));
+      expandButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      expandButton.addSelectionListener(new ExpandTreeHandler());
+
       final Label filterLabel = new Label(left, SWT.NONE);
       filterLabel.setLayoutData(new GridData());
       filterLabel.setText(Messages.labelFilterProjects);
 
       filterText = new Text(left, SWT.BORDER);
-      filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
+      filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 5, 1));
       filterText.addModifyListener(new FilterChangedHandler());
 
       final Label projectsLabel = new Label(left, SWT.NONE);
@@ -146,7 +156,7 @@ public class ProjectImportView extends ViewPart {
       projectTreeViewer.addDoubleClickListener(new SelectProjectByDoubleClickHandler());
 
       final Tree projectTree = projectTreeViewer.getTree();
-      GridData projectTreeData = new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1);
+      GridData projectTreeData = new GridData(SWT.FILL, SWT.FILL, true, true, 5, 1);
       projectTree.setLayoutData(projectTreeData);
 
       final Button addAllButton = new Button(center, SWT.NONE);
@@ -349,6 +359,29 @@ public class ProjectImportView extends ViewPart {
                return;
             }
          }
+      }
+   }
+
+   /**
+    * Handles Event "collapse Tree"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class CollapseTreeHandler extends SelectionAdapter {
+      public void widgetSelected(SelectionEvent e) {
+         projectTreeViewer.collapseAll();
+         projectTreeViewer.expandToLevel(2);
+      }
+   }
+
+   /**
+    * Handles Event "collapse Tree"
+    * 
+    * @author Nikolaus Winter, comdirect bank AG
+    */
+   private final class ExpandTreeHandler extends SelectionAdapter {
+      public void widgetSelected(SelectionEvent e) {
+         projectTreeViewer.expandAll();
       }
    }
 
