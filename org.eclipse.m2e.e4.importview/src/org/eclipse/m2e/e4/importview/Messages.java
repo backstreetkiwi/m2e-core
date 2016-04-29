@@ -32,6 +32,22 @@ public class Messages extends NLS {
    public static String selectRootDirectoryDialogMessage;
    public static String labelRemoveEclipseFiles;
 
+   public static String buttonReloadTooltip;
+   public static String buttonCollapseToLevel1Tooltip;
+   public static String buttonExpandAllTooltip;
+   public static String buttonAddAllTooltip;
+   public static String buttonRemoveAllTooltip;
+   public static String buttonExportListTooltip;
+   public static String buttonImportListTooltip;
+
+   public static String exportSelectionMessageTitle;
+   public static String exportSelectionMessageNoProjectsSelected;
+   public static String exportSelectionMessageIOError;
+
+   public static String importSelectionMessageTitle;
+   public static String importSelectionMessageNoRoot;
+   public static String importSelectionMessageIOError;
+
    static {
       // initialize resource bundle
       NLS.initializeMessages(BUNDLE_NAME, Messages.class);

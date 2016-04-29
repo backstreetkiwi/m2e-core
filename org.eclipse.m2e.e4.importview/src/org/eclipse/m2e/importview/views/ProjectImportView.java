@@ -27,6 +27,7 @@ import org.apache.maven.model.Model;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -100,7 +101,7 @@ public class ProjectImportView extends ViewPart {
       center.setLayout(new GridLayout(1, false));
 
       Composite right = new Composite(parent, SWT.NONE);
-      right.setLayout(new GridLayout(6, true));
+      right.setLayout(new GridLayout(4, false));
       GridData rightCompositeLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
       right.setLayoutData(rightCompositeLayoutData);
 
@@ -125,16 +126,19 @@ public class ProjectImportView extends ViewPart {
       final Button reloadButton = new Button(left, SWT.NONE);
       reloadButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_RELOAD));
       reloadButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      reloadButton.setToolTipText(Messages.buttonReloadTooltip);
       reloadButton.addSelectionListener(new ReloadRepoHandler());
 
       final Button collapseButton = new Button(left, SWT.NONE);
       collapseButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_COLLAPSE));
       collapseButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      collapseButton.setToolTipText(Messages.buttonCollapseToLevel1Tooltip);
       collapseButton.addSelectionListener(new CollapseTreeHandler());
 
       final Button expandButton = new Button(left, SWT.NONE);
       expandButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_EXPAND));
       expandButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      expandButton.setToolTipText(Messages.buttonExpandAllTooltip);
       expandButton.addSelectionListener(new ExpandTreeHandler());
 
       final Label filterLabel = new Label(left, SWT.NONE);
@@ -162,15 +166,17 @@ public class ProjectImportView extends ViewPart {
       final Button addAllButton = new Button(center, SWT.NONE);
       addAllButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_ARROW_RIGHT));
       addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      addAllButton.setToolTipText(Messages.buttonAddAllTooltip);
       addAllButton.addSelectionListener(new AddAllSelectedProjectsToImportListHandler());
 
       final Button removeAllButton = new Button(center, SWT.NONE);
       removeAllButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_ARROW_LEFT));
       removeAllButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      removeAllButton.setToolTipText(Messages.buttonRemoveAllTooltip);
       removeAllButton.addSelectionListener(new RemoveAllSelectedProjectsFromImportListHandler());
 
       final Label projectImportLabel = new Label(right, SWT.NONE);
-      projectImportLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 6, 1));
+      projectImportLabel.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 4, 1));
       projectImportLabel.setText(Messages.labelProjectImportList);
 
       projectImportListViewer = new ListViewer(right, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL);
@@ -181,27 +187,29 @@ public class ProjectImportView extends ViewPart {
       projectImportListViewer.addDoubleClickListener(new DeselectProjectByDoubleClickHandler());
 
       final org.eclipse.swt.widgets.List projectList = projectImportListViewer.getList();
-      GridData projectListData = new GridData(SWT.FILL, SWT.FILL, true, true, 6, 1);
+      GridData projectListData = new GridData(SWT.FILL, SWT.FILL, true, true, 4, 1);
       projectList.setLayoutData(projectListData);
 
       final Button clearProjectListButton = new Button(right, SWT.NONE);
       clearProjectListButton.setText(Messages.buttonClearProjectList);
-      clearProjectListButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+      clearProjectListButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
       clearProjectListButton.addSelectionListener(new ClearProjectsToImportListHandler());
 
       final Button importButton = new Button(right, SWT.NONE);
       importButton.setText(Messages.buttonImportProjects);
-      importButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+      importButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
       importButton.addSelectionListener(new ImportProjectsHandler());
 
       final Button exportSelectionButton = new Button(right, SWT.NONE);
-      exportSelectionButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_EXPORT));
-      exportSelectionButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+      exportSelectionButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_SAVE_IMPORT_SELECTION));
+      exportSelectionButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      exportSelectionButton.setToolTipText(Messages.buttonExportListTooltip);
       exportSelectionButton.addSelectionListener(new ExportSelectionHandler(parent));
 
       final Button importSelectionButton = new Button(right, SWT.NONE);
-      importSelectionButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_IMPORT));
-      importSelectionButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+      importSelectionButton.setImage(MavenE4ImportViewPlugin.getDefault().getImageRegistry().get(MavenE4ImportViewPlugin.ICON_LOAD_IMPORT_SELECTION));
+      importSelectionButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
+      importSelectionButton.setToolTipText(Messages.buttonImportListTooltip);
       importSelectionButton.addSelectionListener(new ImportSelectionHandler(parent));
 
       removeEclipseFilesCheckbox = new Button(right, SWT.CHECK);
@@ -542,80 +550,76 @@ public class ProjectImportView extends ViewPart {
 
       public void widgetSelected(SelectionEvent event) {
 
+         if (ProjectImportView.this.rootDirectory == null) {
+            MessageDialog.open(MessageDialog.WARNING, this.parent.getShell(), Messages.importSelectionMessageTitle, Messages.importSelectionMessageNoRoot,
+                  SWT.NONE);
+            return;
+         }
+         File root = new File(ProjectImportView.this.rootDirectory);
+         if (!root.isDirectory()) {
+            MessageDialog.open(MessageDialog.WARNING, this.parent.getShell(), Messages.importSelectionMessageTitle, Messages.importSelectionMessageNoRoot,
+                  SWT.NONE);
+            return;
+         }
+
          FileDialog saveFileDialog = new FileDialog(parent.getShell(), SWT.NONE);
          saveFileDialog.setText("Please select file location and name");
-         saveFileDialog.setFileName("importList.txt");
+         saveFileDialog.setFileName("project-list.txt");
          // FIXME ???
          saveFileDialog.setOverwrite(true);
          saveFileDialog.open();
 
          String[] fileNames = saveFileDialog.getFileNames();
          if (fileNames.length != 1) {
-            // TODO show message
             return;
          }
 
          File file = new File(new File(saveFileDialog.getFilterPath()), fileNames[0]);
 
          if (!file.exists()) {
-            // TODO show message
             return;
          }
+
+         projectImportListViewer.setSelection(null);
 
          BufferedReader fileReader = null;
          try {
             fileReader = new BufferedReader(new FileReader(file));
             String line = fileReader.readLine();
+            Set<String> pomsToSelect = new HashSet<>();
             while (line != null) {
-               TreeItem treeItem = getTreeItem(line, projectTreeViewer.getTree().getItem(0));
-               if (treeItem != null && treeItem.getData() instanceof MavenProjectInfo) {
-                  addProjectToImportList((MavenProjectInfo) treeItem.getData());
-               }
+               pomsToSelect.add(new File(root, line).getAbsolutePath());
+               projectTreeViewer.resetFilters();
+               projectTreeViewer.expandAll();
+               addAllProjectsToImportList(projectTreeViewer.getTree().getItem(0), pomsToSelect);
                line = fileReader.readLine();
             }
             projectImportListViewer.refresh();
          } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            MessageDialog.open(MessageDialog.WARNING, this.parent.getShell(), Messages.importSelectionMessageTitle, Messages.importSelectionMessageIOError,
+                  SWT.NONE);
+            MavenE4ImportViewPlugin.getDefault().log(IStatus.ERROR, "Error while saving project import list.", e);
          } finally {
             try {
                fileReader.close();
             } catch (IOException e) {
-               // TODO show message, write to error log
-               e.printStackTrace();
+               MessageDialog.open(MessageDialog.WARNING, this.parent.getShell(), Messages.importSelectionMessageTitle, Messages.importSelectionMessageIOError,
+                     SWT.NONE);
+               MavenE4ImportViewPlugin.getDefault().log(IStatus.ERROR, "Error while saving project import list.", e);
             }
          }
 
       }
 
-      private TreeItem getTreeItem(String line, TreeItem treeItem) {
-         if (!line.startsWith("/")) {
-            return null;
+      private void addAllProjectsToImportList(TreeItem treeItem, Set<String> pomPaths) {
+         MavenProjectInfo projectInfo = (MavenProjectInfo) treeItem.getData();
+         if (projectInfo != null && projectInfo.getPomFile() != null && pomPaths.contains(projectInfo.getPomFile().getAbsolutePath())) {
+            addProjectToImportList(projectInfo);
          }
-         if ("/pom.xml".equals(line)) {
-            return treeItem;
+         TreeItem[] items = treeItem.getItems();
+         for (int i = 0; i < items.length; i++) {
+            addAllProjectsToImportList(items[i], pomPaths);
          }
-         int indexOfSecondSlash = line.indexOf("/", 1);
-         if (indexOfSecondSlash == -1) {
-            return null;
-         }
-         String nodeName = line.substring(1, indexOfSecondSlash);
-         if (nodeName.length() == 0) {
-            return null;
-         }
-         TreeItem[] children = treeItem.getItems();
-         int i = 0;
-         TreeItem child = null;
-         while (child == null && i < treeItem.getItemCount()) {
-            if (nodeName.equals(children[i].getText())) {
-               child = children[i];
-            }
-            i++;
-         }
-         if (child == null) {
-            return null;
-         }
-         return getTreeItem(line.substring(1 + nodeName.length(), line.length()), child);
       }
 
    }
@@ -636,20 +640,20 @@ public class ProjectImportView extends ViewPart {
       public void widgetSelected(SelectionEvent event) {
 
          if (projectsToImport.isEmpty()) {
-            // TODO show message or block button in the first place
+            MessageDialog.open(MessageDialog.WARNING, this.parent.getShell(), Messages.exportSelectionMessageTitle,
+                  Messages.exportSelectionMessageNoProjectsSelected, SWT.NONE);
             return;
          }
 
          FileDialog saveFileDialog = new FileDialog(parent.getShell(), SWT.NONE);
          saveFileDialog.setText("Please select file location and name");
-         saveFileDialog.setFileName("importList.txt");
+         saveFileDialog.setFileName("project-list.txt");
          // FIXME ???
          saveFileDialog.setOverwrite(true);
          saveFileDialog.open();
 
          String[] fileNames = saveFileDialog.getFileNames();
          if (fileNames.length != 1) {
-            // TODO show message
             return;
          }
 
@@ -669,14 +673,16 @@ public class ProjectImportView extends ViewPart {
             fileWriter.write(fileContent.toString());
             fileWriter.flush();
          } catch (IOException e) {
-            // TODO show message, write to error log
-            e.printStackTrace();
+            MessageDialog.open(MessageDialog.WARNING, this.parent.getShell(), Messages.exportSelectionMessageTitle, Messages.exportSelectionMessageIOError,
+                  SWT.NONE);
+            MavenE4ImportViewPlugin.getDefault().log(IStatus.ERROR, "Error while saving project import list.", e);
          } finally {
             try {
                fileWriter.close();
             } catch (IOException e) {
-               // TODO show message, write to error log
-               e.printStackTrace();
+               MessageDialog.open(MessageDialog.WARNING, this.parent.getShell(), Messages.exportSelectionMessageTitle, Messages.exportSelectionMessageIOError,
+                     SWT.NONE);
+               MavenE4ImportViewPlugin.getDefault().log(IStatus.ERROR, "Error while saving project import list.", e);
             }
          }
 
