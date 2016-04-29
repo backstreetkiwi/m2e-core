@@ -26,6 +26,10 @@ public class MavenE4ImportViewPlugin extends AbstractUIPlugin {
    public static final String ICON_RELOAD = "icons/reload.gif";
    public static final String ICON_EXPORT = "icons/export.gif";
    public static final String ICON_IMPORT = "icons/import.gif";
+   public static final String ICON_COLLAPSE = "icons/collapse.gif";
+   public static final String ICON_EXPAND = "icons/expand.gif";
+   public static final String ICON_SAVE_IMPORT_SELECTION = "icons/saveImportSelection.gif";
+   public static final String ICON_LOAD_IMPORT_SELECTION = "icons/loadImportSelection.gif";
 
    private static MavenE4ImportViewPlugin instance;
 
@@ -41,6 +45,10 @@ public class MavenE4ImportViewPlugin extends AbstractUIPlugin {
       getImageRegistry().put(ICON_RELOAD, imageDescriptorFromPlugin(PLUGIN_ID, ICON_RELOAD));
       getImageRegistry().put(ICON_EXPORT, imageDescriptorFromPlugin(PLUGIN_ID, ICON_EXPORT));
       getImageRegistry().put(ICON_IMPORT, imageDescriptorFromPlugin(PLUGIN_ID, ICON_IMPORT));
+      getImageRegistry().put(ICON_COLLAPSE, imageDescriptorFromPlugin(PLUGIN_ID, ICON_COLLAPSE));
+      getImageRegistry().put(ICON_EXPAND, imageDescriptorFromPlugin(PLUGIN_ID, ICON_EXPAND));
+      getImageRegistry().put(ICON_LOAD_IMPORT_SELECTION, imageDescriptorFromPlugin(PLUGIN_ID, ICON_LOAD_IMPORT_SELECTION));
+      getImageRegistry().put(ICON_SAVE_IMPORT_SELECTION, imageDescriptorFromPlugin(PLUGIN_ID, ICON_SAVE_IMPORT_SELECTION));
    }
 
    @Override
