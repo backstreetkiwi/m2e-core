@@ -23,7 +23,7 @@ Contributors:
   <packaging>eclipse-test-plugin</packaging>
 
   <name>Tests for Maven Integration for Eclipse Importer framework</name>
-  
+
   <properties>
     <tycho.test.jvmArgs>-Xmx800m</tycho.test.jvmArgs>
     <tycho.surefire.timeout>300</tycho.surefire.timeout>
@@ -37,7 +37,7 @@ Contributors:
           <version>${tycho-version}</version>
           <configuration>
             <useUIHarness>true</useUIHarness>
-            <useUIThread>true</useUIThread>
+            <useUIThread>false</useUIThread>
             <!-- kill test JVM if tests take more than 10 minutes (600 seconds) to finish -->
             <forkedProcessTimeoutInSeconds>${tycho.surefire.timeout}</forkedProcessTimeoutInSeconds>
             <argLine>${tycho.test.jvmArgs}</argLine>
@@ -86,6 +86,5 @@ Contributors:
         </pluginManagement>
       </build>
     </profile>
-
-
+  </profiles>
 </project>

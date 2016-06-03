@@ -12,6 +12,9 @@
 
 package org.eclipse.m2e.editor.xml;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +45,8 @@ public class MvnImages {
   public static final ImageDescriptor IMGD_DISCOVERY = create("insp_sbook.gif"); //$NON-NLS-1$
 
   public static final ImageDescriptor IMGD_EXECUTION = create("execution_obj.gif"); //$NON-NLS-1$
+
+  public static final Image IMG_DISCOVERY = createImage("insp_sbook.gif"); //$NON-NLS-1$
 
   public static final Image IMG_EXECUTION = createImage("execution_obj.gif"); //$NON-NLS-1$
 
@@ -122,4 +127,31 @@ public class MvnImages {
     return AbstractUIPlugin.imageDescriptorFromPlugin(MvnIndexPlugin.PLUGIN_ID, "icons/" + image); //$NON-NLS-1$
   }
 
+  public static Image getImage(ImageDescriptor imageDescriptor) {
+    Image image = Custom.images.get(imageDescriptor);
+    if(image == null) {
+      synchronized(Custom.images) {
+        image = Custom.images.get(imageDescriptor);
+        if(image == null) {
+          image = imageDescriptor.createImage();
+          if(image != null) {
+            Custom.images.put(imageDescriptor, image);
+          }
+        }
+      }
+    }
+    return image;
+  }
+
+  static class Custom {
+    static final Map<ImageDescriptor, Image> images = new ConcurrentHashMap<>();
+
+    static void dispose() {
+      for(Image img : images.values()) {
+        img.dispose();
+      }
+      images.clear();
+    }
+
+  }
 }

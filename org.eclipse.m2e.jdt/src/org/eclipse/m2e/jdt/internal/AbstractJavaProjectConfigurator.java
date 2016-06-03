@@ -101,7 +101,8 @@ public abstract class AbstractJavaProjectConfigurator extends AbstractProjectCon
     ENVIRONMENTS.put("1.6", "JavaSE-1.6"); //$NON-NLS-1$ //$NON-NLS-2$
     ENVIRONMENTS.put("1.7", "JavaSE-1.7"); //$NON-NLS-1$ //$NON-NLS-2$
     ENVIRONMENTS.put("1.8", "JavaSE-1.8"); //$NON-NLS-1$ //$NON-NLS-2$
-    ENVIRONMENTS.put("1.9", "JavaSE-1.9"); //$NON-NLS-1$ //$NON-NLS-2$
+    ENVIRONMENTS.put("1.9", "JavaSE-9"); //$NON-NLS-1$ //$NON-NLS-2$ //will most likely go away
+    ENVIRONMENTS.put("9", "JavaSE-9"); //$NON-NLS-1$ //$NON-NLS-2$
   }
 
   protected static final String DEFAULT_COMPILER_LEVEL = "1.5"; //$NON-NLS-1$
@@ -213,10 +214,19 @@ public abstract class AbstractJavaProjectConfigurator extends AbstractProjectCon
   }
 
   protected void addMavenClasspathContainer(IClasspathDescriptor classpath) {
+    List<IClasspathEntryDescriptor> descriptors = classpath.getEntryDescriptors();
+    boolean isExported = false;
+    for(IClasspathEntryDescriptor descriptor : descriptors) {
+      if(MavenClasspathHelpers.isMaven2ClasspathContainer(descriptor.getPath())) {
+        isExported = descriptor.isExported();
+        break;
+      }
+    }
 
     IClasspathEntry cpe = MavenClasspathHelpers.getDefaultContainerEntry();
     // add new entry without removing existing entries first, see bug398121
-    classpath.addEntry(cpe);
+    IClasspathEntryDescriptor entryDescriptor = classpath.addEntry(cpe);
+    entryDescriptor.setExported(isExported);
   }
 
   protected void addProjectSourceFolders(IClasspathDescriptor classpath, ProjectConfigurationRequest request,
@@ -251,12 +261,14 @@ public abstract class AbstractJavaProjectConfigurator extends AbstractProjectCon
         if(isCompileExecution(compile)) {
           mainSourceEncoding = maven.getMojoParameterValue(mavenProject, compile, "encoding", String.class, monitor); //$NON-NLS-1$
           try {
-            inclusion = toPaths(maven.getMojoParameterValue(mavenProject, compile, "includes", String[].class, monitor)); //$NON-NLS-1$
+            inclusion = toPaths(
+                maven.getMojoParameterValue(mavenProject, compile, "includes", String[].class, monitor)); //$NON-NLS-1$
           } catch(CoreException ex) {
             log.error("Failed to determine compiler inclusions, assuming defaults", ex);
           }
           try {
-            exclusion = toPaths(maven.getMojoParameterValue(mavenProject, compile, "excludes", String[].class, monitor)); //$NON-NLS-1$
+            exclusion = toPaths(
+                maven.getMojoParameterValue(mavenProject, compile, "excludes", String[].class, monitor)); //$NON-NLS-1$
           } catch(CoreException ex) {
             log.error("Failed to determine compiler exclusions, assuming defaults", ex);
           }
@@ -267,14 +279,14 @@ public abstract class AbstractJavaProjectConfigurator extends AbstractProjectCon
         if(isTestCompileExecution(compile)) {
           testSourceEncoding = maven.getMojoParameterValue(mavenProject, compile, "encoding", String.class, monitor); //$NON-NLS-1$
           try {
-            inclusionTest = toPaths(maven.getMojoParameterValue(mavenProject, compile,
-                "testIncludes", String[].class, monitor)); //$NON-NLS-1$
+            inclusionTest = toPaths(
+                maven.getMojoParameterValue(mavenProject, compile, "testIncludes", String[].class, monitor)); //$NON-NLS-1$
           } catch(CoreException ex) {
             log.error("Failed to determine compiler test inclusions, assuming defaults", ex);
           }
           try {
-            exclusionTest = toPaths(maven.getMojoParameterValue(mavenProject, compile,
-                "testExcludes", String[].class, monitor)); //$NON-NLS-1$
+            exclusionTest = toPaths(
+                maven.getMojoParameterValue(mavenProject, compile, "testExcludes", String[].class, monitor)); //$NON-NLS-1$
           } catch(CoreException ex) {
             log.error("Failed to determine compiler test exclusions, assuming defaults", ex);
           }
@@ -293,13 +305,13 @@ public abstract class AbstractJavaProjectConfigurator extends AbstractProjectCon
 
       addSourceDirs(classpath, project, mavenProject.getCompileSourceRoots(), classes.getFullPath(), inclusion,
           exclusion, mainSourceEncoding, mon.newChild(1));
-      addResourceDirs(classpath, project, mavenProject.getBuild().getResources(), classes.getFullPath(),
+      addResourceDirs(classpath, project, mavenProject, mavenProject.getBuild().getResources(), classes.getFullPath(),
           mainResourcesEncoding, mon.newChild(1));
 
       addSourceDirs(classpath, project, mavenProject.getTestCompileSourceRoots(), testClasses.getFullPath(),
           inclusionTest, exclusionTest, testSourceEncoding, mon.newChild(1));
-      addResourceDirs(classpath, project, mavenProject.getBuild().getTestResources(), testClasses.getFullPath(),
-          testResourcesEncoding, mon.newChild(1));
+      addResourceDirs(classpath, project, mavenProject, mavenProject.getBuild().getTestResources(),
+          testClasses.getFullPath(), testResourcesEncoding, mon.newChild(1));
     } finally {
       mon.done();
     }
@@ -385,8 +397,9 @@ public abstract class AbstractJavaProjectConfigurator extends AbstractProjectCon
     return null;
   }
 
-  private void addResourceDirs(IClasspathDescriptor classpath, IProject project, List<Resource> resources,
-      IPath outputPath, String resourceEncoding, IProgressMonitor monitor) throws CoreException {
+  private void addResourceDirs(IClasspathDescriptor classpath, IProject project, MavenProject mavenProject,
+      List<Resource> resources, IPath outputPath, String resourceEncoding, IProgressMonitor monitor)
+      throws CoreException {
 
     for(Resource resource : resources) {
       String directory = resource.getDirectory();
@@ -414,23 +427,24 @@ public abstract class AbstractJavaProjectConfigurator extends AbstractProjectCon
            *     </resource>
            */
           log.error("Skipping resource folder " + r.getFullPath());
+
         } else if(r != null && project.equals(r.getProject())) {
-          IMavenProjectFacade facade = projectManager.getProject(project);
-          IClasspathEntryDescriptor enclosing = getEnclosingEntryDescriptor(classpath, r.getFullPath());
-          if(enclosing == null) {
-            addResourceFolder(classpath, r.getFullPath(), outputPath, null);
+
+          IPath path = r.getFullPath();
+          IClasspathEntryDescriptor enclosing = getEnclosingEntryDescriptor(classpath, path);
+          if(enclosing != null && overlapsWithSourceFolder(path, project, mavenProject)) {
+            configureOverlapWithSource(classpath, enclosing, path);
+          } else if(overlapsWithOtherResourceFolder(path, project, mavenProject)) {
+            // skip adding resource folders that are included by other resource folders
+            log.info("Skipping resource folder " + path + " since it's contained by another resource folder");
           } else {
-            IClasspathEntryDescriptor entryDescriptor = getEntryDescriptor(classpath, r.getFullPath());
-            if(isNonOverlappingResourceDescriptor(entryDescriptor, facade)) {
-              addResourceFolder(classpath, r.getFullPath(), outputPath, entryDescriptor);
-            } else {
-              addInclusionPattern(classpath, enclosing, r.getFullPath());
-            }
+            addResourceFolder(classpath, path, outputPath);
           }
 
           // Set folder encoding (null = platform default)
           IFolder resourceFolder = project.getFolder(relativePath);
           resourceFolder.setDefaultCharset(resourceEncoding, monitor);
+
         } else {
           log.info("Not adding resources folder " + resourceDirectory.getAbsolutePath());
         }
@@ -438,45 +452,57 @@ public abstract class AbstractJavaProjectConfigurator extends AbstractProjectCon
     }
   }
 
-  private void addResourceFolder(IClasspathDescriptor classpath, IPath resourceFolder, IPath outputPath,
-      IClasspathEntryDescriptor entryDescriptor) {
+  private void addResourceFolder(IClasspathDescriptor classpath, IPath resourceFolder, IPath outputPath) {
     log.info("Adding resource folder " + resourceFolder);
-    classpath
-        .addSourceEntry(resourceFolder, outputPath, DEFAULT_INCLUSIONS, new IPath[] {new Path("**")}, false /*optional*/);
+    classpath.addSourceEntry(resourceFolder, outputPath, DEFAULT_INCLUSIONS, new IPath[] {new Path("**")},
+        false /*optional*/);
   }
 
-  private void addInclusionPattern(IClasspathDescriptor classpath, IClasspathEntryDescriptor enclosing,
+  private void configureOverlapWithSource(IClasspathDescriptor classpath, IClasspathEntryDescriptor enclosing,
       IPath resourceFolder) {
     // resources and sources folders overlap. make sure JDT only processes java sources.
     log.info("Resources folder " + resourceFolder + " overlaps with sources folder " + enclosing.getPath());
     enclosing.addInclusionPattern(new Path("**/*.java"));
+    enclosing.removeExclusionPattern(new Path("**"));
     classpath.touchEntry(resourceFolder);
   }
 
-  private boolean isNonOverlappingResourceDescriptor(IClasspathEntryDescriptor cped, IMavenProjectFacade facade) {
-    if(cped != null) {
-      IProject project = facade.getProject();
-      IPath path = cped.getPath();
-      if(isContained(path, project, facade.getCompileSourceLocations())
-          || isContained(path, project, facade.getTestCompileSourceLocations())) {
-        // it's a source folder as well, so here we're having an overlap
-        return false;
-      }
-      return isContained(path, project, facade.getResourceLocations())
-          || isContained(path, project, facade.getTestResourceLocations());
-    }
-    return false;
+  private boolean overlapsWithSourceFolder(IPath path, IProject project, MavenProject mavenProject) {
+    IPath relPath = path.makeRelativeTo(project.getFullPath());
+    List<String> compile = mavenProject.getCompileSourceRoots();
+    List<String> test = mavenProject.getTestCompileSourceRoots();
+    return isContained(relPath, project, getSourceFolders(project, compile))
+        || isContained(relPath, project, getSourceFolders(project, test));
   }
 
-  private boolean isContained(IPath fullpath, IProject project, IPath[] relativePathes) {
-    for(IPath location : relativePathes) {
-      IPath expanded = null;
-      if(location.isEmpty()) {
-        expanded = project.getFullPath();
-      } else {
-        expanded = project.getFolder(location).getFullPath();
+  private boolean overlapsWithOtherResourceFolder(IPath path, IProject project, MavenProject mavenProject) {
+    IPath relPath = path.makeRelativeTo(project.getFullPath());
+    return isContained(relPath, project, getOtherResourceFolders(project, mavenProject.getResources(), relPath))
+        || isContained(relPath, project, getOtherResourceFolders(project, mavenProject.getTestResources(), relPath));
+  }
+
+  private IPath[] getSourceFolders(IProject project, List<String> sources) {
+    List<IPath> paths = new ArrayList<>();
+    for(String source : sources) {
+      paths.add(getProjectRelativePath(project, source));
+    }
+    return paths.toArray(new IPath[paths.size()]);
+  }
+
+  private IPath[] getOtherResourceFolders(IProject project, List<Resource> resources, IPath curPath) {
+    List<IPath> paths = new ArrayList<>();
+    for(Resource res : resources) {
+      IPath path = getProjectRelativePath(project, res.getDirectory());
+      if(!path.equals(curPath)) {
+        paths.add(path);
       }
-      if(expanded.equals(fullpath)) {
+    }
+    return paths.toArray(new IPath[paths.size()]);
+  }
+
+  private boolean isContained(IPath path, IProject project, IPath[] otherPaths) {
+    for(IPath otherPath : otherPaths) {
+      if(otherPath.isPrefixOf(path)) {
         return true;
       }
     }

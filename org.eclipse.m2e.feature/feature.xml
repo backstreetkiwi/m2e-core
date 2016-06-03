@@ -30,7 +30,7 @@
       <import plugin="org.eclipse.wst.sse.core"/>
       <import plugin="org.eclipse.wst.xml.core"/>
       <import plugin="org.eclipse.jem.util"/>
-      <import feature="org.eclipse.platform" version="3.6.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.platform"/>
       <import feature="org.eclipse.rcp" version="3.6.0" match="greaterOrEqual"/>
       <import feature="org.eclipse.jdt" version="3.6.0" match="greaterOrEqual"/>
    </requires>
@@ -158,6 +158,13 @@
 
    <plugin
          id="org.eclipse.m2e.profiles.ui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.m2e.importer"
          download-size="0"
          install-size="0"
          version="0.0.0"
